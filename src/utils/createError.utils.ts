@@ -21,6 +21,16 @@ const ERRORS = {
     message: "The request was malformed or invalid.",
     statusCode: 400,
   },
+  CONFLICT: {
+    code: "CONFLICT",
+    message: "Resource already exists.",
+    statusCode: 409,
+  },
+  UNAUTHORIZED: {
+    code: "UNAUTHORIZED",
+    message: "Invalid credentials.",
+    statusCode: 401,
+  },
 };
 
 type TCreateErrorParams = {
