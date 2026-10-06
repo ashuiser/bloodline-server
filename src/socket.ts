@@ -2,11 +2,15 @@ import { parseCookie } from "cookie";
 import jwt from "jsonwebtoken";
 import type { Server } from "socket.io";
 import { env } from "./config/env.js";
-import { getNearbyDonors, updateLocation } from "./services/locationService.js";
+import { updateLocation } from "./services/locationService.js";
 
 const JWT_SECRET = env.JWT_SECRET;
 
+let ioInstance: Server | null = null;
+const connectedSockets = new Map<string, string>(); // userId -> socketId
+
 export function setupSockets(io: Server) {
+	ioInstance = io;
 	// Authentication middleware
 	io.use((socket, next) => {
 		const cookies = parseCookie(socket.handshake.headers.cookie || "");
@@ -28,15 +32,12 @@ export function setupSockets(io: Server) {
 	io.on("connection", (socket) => {
 		const userId = socket.data.userId;
 		console.log(`Socket connected: ${userId} (${socket.id})`);
+		connectedSockets.set(userId, socket.id);
 
 		socket.on("updateLocation", async ({ lng, lat }) => {
 			if (typeof lng !== "number" || typeof lat !== "number") return;
 			try {
 				await updateLocation(userId, lng, lat);
-
-				// Fetch nearby donors and broadcast them to this user
-				const nearby = await getNearbyDonors(lng, lat, 10);
-				socket.emit("nearbyDonors", nearby);
 			} catch (err) {
 				console.error("Redis geo error:", err);
 			}
@@ -44,6 +45,21 @@ export function setupSockets(io: Server) {
 
 		socket.on("disconnect", () => {
 			console.log(`Socket disconnected: ${userId}`);
+			connectedSockets.delete(userId);
 		});
+	});
+}
+
+export function broadcastToUsers(
+	userIds: string[],
+	event: string,
+	data: unknown,
+) {
+	if (!ioInstance) return;
+	userIds.forEach((userId) => {
+		const socketId = connectedSockets.get(userId);
+		if (socketId) {
+			ioInstance?.to(socketId).emit(event, data);
+		}
 	});
 }

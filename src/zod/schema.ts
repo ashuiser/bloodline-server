@@ -24,10 +24,11 @@ export const signupSchema = z.object({
 	email: z.email(),
 	phone: z.string().min(10),
 	bloodType: z.enum(BloodTypes),
-	dob: z.coerce.date().max(
-		new Date(new Date().setFullYear(new Date().getFullYear() - 15)),
-		{ message: "You must be at least 15 years old" }
-	),
+	dob: z.coerce
+		.date()
+		.max(new Date(new Date().setFullYear(new Date().getFullYear() - 15)), {
+			message: "You must be at least 15 years old",
+		}),
 	password: z.string().min(8),
 });
 export type TSignup = z.infer<typeof signupSchema>;
@@ -38,9 +39,29 @@ export const loginSchema = z.object({
 });
 export type TLogin = z.infer<typeof loginSchema>;
 
-export const locationSchema = z.object({
+export const locationForDonorsSchema = z.object({
 	lng: z.coerce.number(),
 	lat: z.coerce.number(),
 	radius: z.coerce.number().optional().default(50),
 });
-export type TLocation = z.infer<typeof locationSchema>;
+export type TLocationForDonors = z.infer<typeof locationForDonorsSchema>;
+
+export const locationForHospitalsSchema = z.object({
+	lng: z.coerce.number(),
+	lat: z.coerce.number(),
+});
+export type TLocationForHospitals = z.infer<typeof locationForHospitalsSchema>;
+
+export const createRequestSchema = z.object({
+	hospitalName: z.string().min(2),
+	hospitalLat: z.coerce.number(),
+	hospitalLng: z.coerce.number(),
+	requiredBloodType: z.enum(BloodTypes),
+	unitsRequired: z.coerce.number().min(1),
+});
+export type TCreateRequest = z.infer<typeof createRequestSchema>;
+
+export const acceptDonationSchema = z.object({
+	requestId: z.uuid(),
+});
+export type TAcceptDonation = z.infer<typeof acceptDonationSchema>;

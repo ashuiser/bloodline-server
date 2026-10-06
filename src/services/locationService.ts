@@ -17,21 +17,22 @@ export const updateLocation = async (
 	});
 };
 
-export const getNearbyDonors = async (
+export const getNearbyDonorsService = async (
 	lng: number,
 	lat: number,
 	radiusKm: number = 50,
+	userId: string,
 ) => {
 	const geoResults = await redisClient.geoSearchWith(
 		GEO_KEY,
 		{ longitude: lng, latitude: lat },
 		{ radius: radiusKm, unit: "km" },
-		["WITHCOORD"]
+		["WITHCOORD"],
 	);
 
 	if (geoResults.length === 0) return [];
 
-	const userIds = geoResults.map((r) => r.member);
+	const userIds = geoResults.map((r) => r.member).filter((id) => id !== userId);
 
 	const usersData = await db
 		.select({
